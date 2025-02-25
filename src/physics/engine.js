@@ -45,25 +45,7 @@ function initPhysics() {
     // TODO: Stage 2 - Add more sophisticated physics initialization
 }
 
-/**
- * Update physics for the current frame
- * @param {number} deltaTime - Time since last frame in seconds
- */
-function updatePhysics(deltaTime) {
-    if (!isRunning) return;
-    
-    // Scale deltaTime by time scale
-    const scaledDeltaTime = deltaTime * config.timeScale;
-    
-    // Fixed time step approach (accumulates leftover time)
-    accumulator += scaledDeltaTime;
-    
-    // Run physics steps
-    while (accumulator >= FIXED_TIME_STEP) {
-        stepPhysics(FIXED_TIME_STEP);
-        accumulator -= FIXED_TIME_STEP;
-    }
-}
+// Original updatePhysics function is replaced by the improved version below
 
 /**
  * Perform a single physics step
