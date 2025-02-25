@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kite Flying Simulator</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="loading-content">
+            <h1>Kite Flying Simulator</h1>
+            <div class="progress-container">
+                <div id="loading-progress" class="progress-bar"></div>
+            </div>
+            <p id="loading-text">Loading assets...</p>
+        </div>
+    </div>
+    
+    <div id="ui-container">
+        <div id="telemetry-panel">
+            <h3>Flight Telemetry</h3>
+            <div class="telemetry-data">
+                <div class="data-row">
+                    <span class="label">Wind Speed:</span>
+                    <span id="wind-speed" class="value">0.0 mph</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Kite Speed:</span>
+                    <span id="kite-speed" class="value">0.0 mph</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Angle of Attack:</span>
+                    <span id="angle-of-attack" class="value">0.0°</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Loops (CW):</span>
+                    <span id="loops-cw" class="value">0</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Loops (CCW):</span>
+                    <span id="loops-ccw" class="value">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="controls-panel">
+            <h3>Controls</h3>
+            <div class="control-group">
+                <label for="wind-control">Wind Speed</label>
+                <input type="range" id="wind-control" min="0" max="100" value="50">
+                <span id="wind-control-value">50%</span>
+            </div>
+            
+            <div class="control-group">
+                <label for="line-length">Line Length</label>
+                <input type="range" id="line-length" min="0" max="100" value="50">
+                <span id="line-length-value">50%</span>
+            </div>
+            
+            <div class="control-group dual-control">
+                <div class="left-control">
+                    <label for="left-line">Left Line</label>
+                    <input type="range" id="left-line" min="0" max="100" value="50" 
+                    orientation="vertical">
+                </div>
+                <div class="right-control">
+                    <label for="right-line">Right Line</label>
+                    <input type="range" id="right-line" min="0" max="100" value="50" orientation="vertical">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="kite-select">Kite Type</label>
+                <select id="kite-select">
+                    <option value="standard">Standard Stunt Kite</option>
+                    <option value="delta">Delta Kite</option>
+                    <option value="precision">Precision Stunt Kite</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div id="info-overlay">
+        <div id="fps-counter">FPS: <span id="fps">0</span></div>
+        <div id="help-button">?</div>
+    </div>
+    
+    <div id="help-dialog" class="hidden">
+        <div class="dialog-content">
+            <h2>Controls Help</h2>
+            <ul>
+                <li><strong>Left Line:</strong> Pull to steer kite left</li>
+                <li><strong>Right Line:</strong> Pull to steer kite right</li>
+                <li><strong>Wind Speed:</strong> Adjust wind force</li>
+                <li><strong>Line Length:</strong> Adjust overall line length</li>
+                <li><strong>Mouse Drag:</strong> Rotate camera view</li>
+                <li><strong>Mouse Wheel:</strong> Zoom in/out</li>
+                <li><strong>R Key:</strong> Reset kite position</li>
+            </ul>
+            <button id="close-help">Close</button>
+        </div>
+    </div>
+    
+    <canvas id="kiteCanvas"></canvas>
+    
+    <!-- Module imports -->
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
