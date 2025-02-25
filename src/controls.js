@@ -18,10 +18,10 @@ const controlState = {
     
     // Control mappings
     controlMappings: {
-        'ArrowLeft': 'leftLine',
-        'ArrowRight': 'rightLine',
-        'ArrowUp': 'lineIn',
-        'ArrowDown': 'lineOut',
+        'ArrowLeft': 'leftDifferential',  // Pull left line more than right
+        'ArrowRight': 'rightDifferential', // Pull right line more than left
+        'ArrowUp': 'lineIn',              // Shorten both lines
+        'ArrowDown': 'lineOut',           // Lengthen both lines
         'r': 'reset',
         ' ': 'reset', // Space bar
     },
@@ -35,6 +35,7 @@ const controlState = {
     leftLine: 0.5,  // 0-1 range
     rightLine: 0.5, // 0-1 range
     lineLength: 0.5, // 0-1 range (0.5 is neutral)
+    differential: 0.0, // -1 to 1 range (0 is neutral, negative: left tighter, positive: right tighter)
     windSpeed: 0.5  // 0-1 range
 };
 
@@ -164,41 +165,93 @@ function setupUIControls() {
 function pollControls() {
     // Handle keyboard controls
     
-    // Left/Right controls (for left/right lines)
+    // Left/Right differential controls - reduced sensitivity
     if (controlState.keys['ArrowLeft']) {
-        controlState.leftLine = Math.min(1.0, controlState.leftLine + 0.01 * controlState.sensitivity);
+        // Increase left line tension, decrease right line tension
+        controlState.differential = Math.max(-1.0, controlState.differential - 0.01 * controlState.sensitivity);
+        updateDifferentialControls();
+    } else if (controlState.keys['ArrowRight']) {
+        // Increase right line tension, decrease left line tension
+        controlState.differential = Math.min(1.0, controlState.differential + 0.01 * controlState.sensitivity);
+        updateDifferentialControls();
+    } else {
+        // Auto-center differential for stability when no keys are pressed
+        if (Math.abs(controlState.differential) > 0.001) {
+            // Apply centering force proportional to current differential
+            controlState.differential *= 0.95;
+            updateDifferentialControls();
+        }
+    }
+    
+    // A/D keys for direct left/right line control (alternative controls)
+    if (controlState.keys['a'] || controlState.keys['A']) {
+        controlState.leftLine = Math.min(1.0, controlState.leftLine + 0.005 * controlState.sensitivity);
         setLeftInput(controlState.leftLine);
         updateUIControl('left-line', controlState.leftLine);
-    } else if (controlState.keys['a'] || controlState.keys['A']) {
-        controlState.leftLine = Math.max(0.0, controlState.leftLine - 0.01 * controlState.sensitivity);
+    } else if (controlState.keys['z'] || controlState.keys['Z']) {
+        controlState.leftLine = Math.max(0.0, controlState.leftLine - 0.005 * controlState.sensitivity);
         setLeftInput(controlState.leftLine);
         updateUIControl('left-line', controlState.leftLine);
     }
     
-    if (controlState.keys['ArrowRight']) {
-        controlState.rightLine = Math.min(1.0, controlState.rightLine + 0.01 * controlState.sensitivity);
+    if (controlState.keys['d'] || controlState.keys['D']) {
+        controlState.rightLine = Math.min(1.0, controlState.rightLine + 0.005 * controlState.sensitivity);
         setRightInput(controlState.rightLine);
         updateUIControl('right-line', controlState.rightLine);
-    } else if (controlState.keys['d'] || controlState.keys['D']) {
-        controlState.rightLine = Math.max(0.0, controlState.rightLine - 0.01 * controlState.sensitivity);
+    } else if (controlState.keys['c'] || controlState.keys['C']) {
+        controlState.rightLine = Math.max(0.0, controlState.rightLine - 0.005 * controlState.sensitivity);
         setRightInput(controlState.rightLine);
         updateUIControl('right-line', controlState.rightLine);
     }
     
-    // Up/Down controls (for line length)
+    // Up/Down controls (for line length) - reduced sensitivity
     if (controlState.keys['ArrowUp']) {
-        controlState.lineLength = Math.min(1.0, controlState.lineLength + 0.01 * controlState.sensitivity);
+        controlState.lineLength = Math.min(1.0, controlState.lineLength + 0.005 * controlState.sensitivity);
         const lengthAdjustment = (controlState.lineLength - 0.5) * 2;
         setOverallLineLength(lengthAdjustment);
         updateUIControl('line-length', controlState.lineLength);
     } else if (controlState.keys['ArrowDown']) {
-        controlState.lineLength = Math.max(0.0, controlState.lineLength - 0.01 * controlState.sensitivity);
+        controlState.lineLength = Math.max(0.0, controlState.lineLength - 0.005 * controlState.sensitivity);
         const lengthAdjustment = (controlState.lineLength - 0.5) * 2;
         setOverallLineLength(lengthAdjustment);
         updateUIControl('line-length', controlState.lineLength);
     }
+}
+
+/**
+ * Update left and right line controls based on differential
+ */
+function updateDifferentialControls() {
+    // Apply differential to line controls
+    // When differential is negative, left line is tighter
+    // When differential is positive, right line is tighter
     
-    // TODO: Stage 2 - Add more keyboard controls
+    // Base value for both lines
+    const baseValue = 0.5;
+    
+    // Calculate line values based on differential
+    // Differential range is -1 to 1, we'll use half of that for each line
+    // Apply non-linear curve to make small adjustments more gentle
+    const diffAmount = Math.pow(Math.abs(controlState.differential), 0.7) * 0.5;
+    
+    if (controlState.differential < 0) {
+        // Left line tighter
+        controlState.leftLine = baseValue + diffAmount;
+        controlState.rightLine = baseValue - diffAmount;
+    } else {
+        // Right line tighter
+        controlState.leftLine = baseValue - diffAmount;
+        controlState.rightLine = baseValue + diffAmount;
+    }
+    
+    // Apply the differential to the tether system
+    setDifferentialLineLength(controlState.differential);
+    
+    // Update UI controls
+    setLeftInput(controlState.leftLine);
+    setRightInput(controlState.rightLine);
+    updateUIControl('left-line', controlState.leftLine);
+    updateUIControl('right-line', controlState.rightLine);
 }
 
 /**

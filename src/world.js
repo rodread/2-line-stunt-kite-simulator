@@ -9,6 +9,9 @@
  * - Renderer configuration
  */
 
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
 // Module-level variables
 let scene, camera, renderer, controls;
 let ground, sky;
@@ -31,9 +34,9 @@ function initWorld() {
                 1000 // Far plane
             );
             
-            // Set initial camera position (behind the kite operator looking towards the kite)
-            camera.position.set(0, 2, -5); // x, y, z (y is height, -z is behind)
-            camera.lookAt(0, 2, 5); // Look at the position where the kite will be
+            // Set initial camera position (behind and above the kite operator looking towards the kite)
+            camera.position.set(0, 8, -10); // Higher and further back for better visibility
+            camera.lookAt(0, 5, -35); // Look at the position where the kite will be (in front of pilot)
             
             // Create the renderer
             const canvas = document.getElementById('kiteCanvas');
@@ -48,11 +51,11 @@ function initWorld() {
             renderer.setClearColor(0x87CEEB); // Sky blue background
             
             // Set up orbit controls for camera manipulation
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.target.set(0, 2, 0); // Set the orbit point to center of scene
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 5, -35); // Set the orbit point to where the kite will be (in front of pilot)
             controls.maxPolarAngle = Math.PI / 2; // Prevent camera from going below ground
             controls.minDistance = 3; // Minimum zoom distance
-            controls.maxDistance = 20; // Maximum zoom distance
+            controls.maxDistance = 100; // Maximum zoom distance - increased to allow zooming out further
             controls.update();
             
             // Create the ground plane
@@ -61,8 +64,8 @@ function initWorld() {
             // Setup basic lighting
             setupLighting();
             
-            // Add subtle fog for depth perception
-            scene.fog = new THREE.FogExp2(0x87CEEB, 0.01);
+            // Remove fog completely as it was obscuring the kite
+            // scene.fog = new THREE.FogExp2(0x87CEEB, 0.001);
             
             // TODO: Stage 1 - Add skybox or other environmental elements
             
@@ -78,13 +81,20 @@ function initWorld() {
  */
 function createGround() {
     // Create a large ground plane
-    const groundGeometry = new THREE.PlaneGeometry(100, 100, 10, 10);
+    const groundGeometry = new THREE.PlaneGeometry(100, 100, 32, 32);
     
-    // Create material with a grass texture
+    // Create a repeating grass texture
+    const textureLoader = new THREE.TextureLoader();
+    const grassTexture = new THREE.CanvasTexture(createGrassTexture());
+    grassTexture.wrapS = THREE.RepeatWrapping;
+    grassTexture.wrapT = THREE.RepeatWrapping;
+    grassTexture.repeat.set(20, 20);
+    
+    // Create material with the grass texture
     const groundMaterial = new THREE.MeshStandardMaterial({
-        color: 0x7CFC00, // Light green
+        map: grassTexture,
         roughness: 0.8,
-        metalness: 0.2
+        metalness: 0.1
     });
     
     // Create the mesh
@@ -96,7 +106,142 @@ function createGround() {
     // Add the ground to the scene
     scene.add(ground);
     
-    // TODO: Stage 3 - Add terrain features or texture
+    // Add grid lines for better spatial awareness
+    const gridHelper = new THREE.GridHelper(100, 20, 0x000000, 0x444444);
+    gridHelper.position.y = 0.01; // Slightly above ground to prevent z-fighting
+    scene.add(gridHelper);
+    
+    // Add wind window visualization
+    createWindWindow();
+}
+
+/**
+ * Create a procedural grass texture
+ * @returns {HTMLCanvasElement} Canvas with grass texture
+ */
+function createGrassTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const context = canvas.getContext('2d');
+    
+    // Fill background with base green
+    context.fillStyle = '#7CFC00';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add some variation
+    for (let i = 0; i < 1000; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const size = 1 + Math.random() * 2;
+        
+        // Random darker green patches
+        context.fillStyle = `rgba(0, ${100 + Math.random() * 100}, 0, 0.1)`;
+        context.beginPath();
+        context.arc(x, y, size, 0, Math.PI * 2);
+        context.fill();
+    }
+    
+    return canvas;
+}
+
+/**
+ * Create a visualization of the kite's wind window
+ */
+function createWindWindow() {
+    // Create a quarter-sphere to represent the wind window
+    const radius = 30; // Match this to the tether length
+    const segments = 16;
+    
+    // Create the geometry for the quarter-sphere
+    const geometry = new THREE.SphereGeometry(
+        radius, 
+        segments, 
+        segments, 
+        0, // phiStart
+        Math.PI, // phiLength (half a sphere)
+        0, // thetaStart
+        Math.PI / 2 // thetaLength (quarter of a sphere)
+    );
+    
+    // Create a wireframe material with reduced opacity
+    const material = new THREE.MeshBasicMaterial({
+        color: 0x4682B4, // Steel blue
+        wireframe: true,
+        transparent: true,
+        opacity: 0.15 // Reduced opacity to make it less obtrusive
+    });
+    
+    // Create the mesh
+    const windWindow = new THREE.Mesh(geometry, material);
+    
+    // Position it at the operator position, but rotate it to face forward (negative z)
+    windWindow.position.set(0, 0, -10);
+    windWindow.rotation.y = Math.PI; // Rotate 180 degrees to face forward
+    
+    // Add to scene
+    scene.add(windWindow);
+    
+    // Add labels for wind window zones
+    addWindWindowLabels(radius);
+}
+
+/**
+ * Add rainbow-like power zone visualization to the wind window
+ * @param {number} radius - The radius of the wind window
+ */
+function addWindWindowLabels(radius) {
+    // Create a canvas for the texture
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const context = canvas.getContext('2d');
+    
+    // Clear canvas
+    context.fillStyle = 'rgba(0, 0, 0, 0)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Create a rainbow-like gradient to indicate power zones
+    // Red at the bottom (most power), through orange, yellow, green, to blue at the top (edge/least power)
+    const gradient = context.createLinearGradient(0, canvas.height, 0, 0);
+    gradient.addColorStop(0, 'rgba(255, 0, 0, 0.3)');      // Red (bottom - max power)
+    gradient.addColorStop(0.25, 'rgba(255, 165, 0, 0.3)'); // Orange
+    gradient.addColorStop(0.5, 'rgba(255, 255, 0, 0.3)');  // Yellow (middle - neutral)
+    gradient.addColorStop(0.75, 'rgba(0, 255, 0, 0.3)');   // Green
+    gradient.addColorStop(1, 'rgba(0, 0, 255, 0.3)');      // Blue (top - edge/min power)
+    
+    // Fill the canvas with the gradient
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add small text labels
+    context.font = 'bold 16px Arial'; // Small font size
+    context.fillStyle = 'rgba(255, 255, 255, 0.7)'; // White with some opacity
+    context.textAlign = 'center';
+    context.fillText('Edge Zone', canvas.width / 2, 30); // Top
+    context.fillText('Neutral Zone', canvas.width / 2, canvas.height / 2); // Middle
+    context.fillText('Power Zone', canvas.width / 2, canvas.height - 20); // Bottom
+    
+    // Create texture from canvas
+    const texture = new THREE.CanvasTexture(canvas);
+    
+    // Create a plane to display the texture that covers the wind window
+    const geometry = new THREE.PlaneGeometry(radius * 1.5, radius * 0.75);
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        opacity: 0.4, // Very transparent
+        side: THREE.DoubleSide,
+        depthWrite: false // Prevents z-fighting and ensures visibility
+    });
+    
+    const label = new THREE.Mesh(geometry, material);
+    // Position in front of the wind window (centered)
+    label.position.set(0, radius / 2, -10 - radius / 2);
+    label.rotation.x = -Math.PI / 4; // Angle to match the wind window
+    label.rotation.y = Math.PI; // Rotate to face forward
+    
+    scene.add(label);
 }
 
 /**

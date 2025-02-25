@@ -143,13 +143,19 @@ function initUIEvents() {
     });
     
     closeHelp.addEventListener('click', () => {
+        console.log('Close help button clicked');
         helpDialog.classList.add('hidden');
+        // Also set display style directly as a fallback
+        helpDialog.style.display = 'none';
     });
     
     // Close dialog when clicking outside
     helpDialog.addEventListener('click', (e) => {
         if (e.target === helpDialog) {
+            console.log('Clicked outside dialog');
             helpDialog.classList.add('hidden');
+            // Also set display style directly as a fallback
+            helpDialog.style.display = 'none';
         }
     });
     

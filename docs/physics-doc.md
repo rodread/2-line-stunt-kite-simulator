@@ -59,9 +59,25 @@ Where:
 - C_d: drag coefficient (dependent on angle of attack)
 - lift_direction: perpendicular to relative airflow direction
 
-### 3. Tether Forces
+### 3. Bridle System
 
-The kite is attached to the operator via two control lines. Each line exerts a tension force on the kite:
+The bridle system is a network of lines that connects the kite to the control lines. It serves several important functions:
+
+1. Distributes forces from the control lines across the kite structure
+2. Maintains the kite's angle of attack relative to the wind
+3. Provides stability and control
+
+The bridle consists of multiple attachment points on the kite (top, bottom, left, right) that connect to a central bridle point where the control lines attach.
+
+```
+Bridle_tension = f(kite_orientation, wind_direction, control_inputs)
+```
+
+The bridle system helps maintain the proper angle of attack by creating a balance of forces that keeps the kite oriented correctly relative to the wind.
+
+### 4. Tether Forces
+
+The kite is attached to the operator via two control lines that connect to the bridle system. Each line exerts a tension force on the kite:
 
 ```
 F_tether = T_left * left_direction + T_right * right_direction
@@ -69,7 +85,7 @@ F_tether = T_left * left_direction + T_right * right_direction
 
 Where:
 - T_left, T_right: tension magnitudes
-- left_direction, right_direction: normalized direction vectors from kite attachment points to operator
+- left_direction, right_direction: normalized direction vectors from bridle connection point to operator
 
 Tension is calculated based on the line properties and control inputs:
 

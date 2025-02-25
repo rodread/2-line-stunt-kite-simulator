@@ -23,16 +23,17 @@ This document outlines the step-by-step implementation plan for the Kite Flying 
 ## Stage 2: Simplified Physics and Basic Controls
 
 ### Tasks
-- [ ] Implement basic physics engine with force application
-- [ ] Create simplified kite physics model (gravity, basic drag)
-- [ ] Implement basic wind force calculations
-- [ ] Create visual representation of tethers (lines)
-- [ ] Implement line tension calculations
-- [ ] Add basic controls for line manipulation
-- [ ] Implement kite movement based on line tension
-- [ ] Add simple rotational physics for kite orientation
-- [ ] Create keyboard and UI controls for line inputs
-- [ ] Implement collision detection with ground
+- [x] Implement basic physics engine with force application
+- [x] Create simplified kite physics model (gravity, basic drag)
+- [x] Implement basic wind force calculations
+- [x] Create visual representation of tethers (lines)
+- [x] Implement line tension calculations
+- [x] Add basic controls for line manipulation
+- [x] Implement kite movement based on line tension
+- [x] Add simple rotational physics for kite orientation
+- [x] Create keyboard and UI controls for line inputs
+- [x] Implement collision detection with ground
+- [x] Implement bridle system for maintaining kite angle of attack
 
 ### Deliverables
 - Interactive kite that responds to line controls
