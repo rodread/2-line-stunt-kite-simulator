@@ -10,7 +10,7 @@
 
 import { getKiteProperties, applyForce, applyTorque } from '../kite.js';
 import { getWindForce, getWindDirection, getWindSpeed } from './wind.js';
-import { getTetherForces } from './tether.js';
+import { getTetherForces, getTetherConfig } from './tether.js';
 
 // Physics constants
 const GRAVITY = 9.81; // m/s²
@@ -210,9 +210,9 @@ function checkGroundCollision(kite) {
     }
 }
 
-Improved Physics Integration Method
-
 /**
+ * Improved Physics Integration Method
+ * 
  * Update physics for the current frame
  * @param {number} deltaTime - Time since last frame in seconds
  */
@@ -448,6 +448,9 @@ function calculateAndApplyTorque(kite, tetherForces) {
     // Get current kite properties
     const kitePosition = kite.position;
     
+    // Get tether configuration
+    const tetherConfig = getTetherConfig();
+    
     // Get bridle connection point in world space
     const bridleConnection = {
         x: kitePosition.x + kite.bridle.connectionPoint.x,
@@ -468,8 +471,13 @@ function calculateAndApplyTorque(kite, tetherForces) {
         z: tetherConfig.operatorPosition.z
     };
     
-    // Calculate tension forces based on differential input
-    const { leftTension, rightTension } = calculateTetherForces();
+    // Get tether forces for tension calculation
+    const tetherForceValues = getTetherForces();
+    
+    // Use a simple approximation for left and right tensions
+    // In a real implementation, we'd get these directly from the tether system
+    const leftTension = tetherForceValues.x * 0.5;
+    const rightTension = tetherForceValues.x * 0.5;
     
     // Calculate direction vectors from bridle connection to operator hands
     const leftDir = {
@@ -596,6 +604,20 @@ function calculateAndApplyTorque(kite, tetherForces) {
  */
 function getPhysicsConfig() {
     return { ...config }; // Return a copy to prevent direct modification
+}
+
+/**
+ * Update physics engine configuration
+ * @param {Object} newConfig - New configuration values
+ */
+function updatePhysicsConfig(newConfig) {
+    // Update configuration with new values
+    if (newConfig.timeScale !== undefined) config.timeScale = newConfig.timeScale;
+    if (newConfig.simulationStepsPerFrame !== undefined) config.simulationStepsPerFrame = newConfig.simulationStepsPerFrame;
+    if (newConfig.enableGravity !== undefined) config.enableGravity = newConfig.enableGravity;
+    if (newConfig.enableWind !== undefined) config.enableWind = newConfig.enableWind;
+    if (newConfig.enableDrag !== undefined) config.enableDrag = newConfig.enableDrag;
+    if (newConfig.enableCollisions !== undefined) config.enableCollisions = newConfig.enableCollisions;
 }
 
 // Export public functions
